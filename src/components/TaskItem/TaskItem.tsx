@@ -1,8 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 
+import { ConfirmationModal } from "../ConfirmationModal";
 import { TaskItemProps } from "./TaskItem.types";
 
 export const TaskItem = ({ task, onDelete, onToggle }: TaskItemProps) => {
+  const [open, setOpen] = useState(false);
+
+  const handleDelete = () => {
+    setOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete(task.id);
+    setOpen(false);
+  };
+
   return (
     <li className="flex items-center justify-between border-b py-2">
       <button
@@ -12,9 +24,11 @@ export const TaskItem = ({ task, onDelete, onToggle }: TaskItemProps) => {
         {task.title}
       </button>
 
-      <button onClick={() => onDelete(task.id)} className="text-white bg-red-500 px-4 py-1 rounded hover:opacity-90">
+      <button onClick={handleDelete} className="text-white bg-red-500 px-4 py-1 rounded hover:opacity-90">
         Delete
       </button>
+
+      <ConfirmationModal open={open} onOpen={setOpen} onDelete={handleConfirmDelete} />
     </li>
   );
 };
