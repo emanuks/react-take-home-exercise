@@ -1,18 +1,23 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { Filter } from "../Filter";
 import { TaskItem } from "../TaskItem";
 
+import { TaskForm } from "../TaskForm";
 import { ITask } from "./TaskManager.types";
 
 export const TaskManager = () => {
-  const [tasks, setTasks] = useState<ITask[]>([
-    { id: 1, title: "Buy groceries", completed: false },
-    { id: 2, title: "Clean the house", completed: true },
-  ]);
+  const [tasks, setTasks] = useState<ITask[]>([]);
   const [filter, setFilter] = useState<string>("all");
-  const [newTask, setNewTask] = useState<string>("");
+
   const statuses = ["all", "completed", "pending"];
+
+  useEffect(() => {
+    const localTasks = localStorage.getItem("tasks");
+    const parsedTasks = localTasks ? JSON.parse(localTasks) : [];
+
+    setTasks(parsedTasks);
+  }, []);
 
   const filteredTasks = tasks.filter((task) => {
     if (filter === "completed") return task.completed;
@@ -20,25 +25,28 @@ export const TaskManager = () => {
     return true;
   });
 
-  const handleAddTask = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newTask!.trim() === "") return;
-
+  const handleAddTask = (title: string) => {
     const newTaskObj = {
       id: tasks.length + 1,
-      title: newTask,
+      title,
       completed: false,
     };
 
     setTasks([...tasks, newTaskObj]);
-    setNewTask("");
+
+    const serializedTasks = JSON.stringify([...tasks, newTaskObj]);
+
+    localStorage.setItem("tasks", serializedTasks);
   };
 
   const handleDeleteTask = (id: number) => {
     const newTasks = tasks.filter((task) => task.id !== id);
 
     setTasks(newTasks);
+
+    const serializedTasks = JSON.stringify([...newTasks]);
+
+    localStorage.setItem("tasks", serializedTasks);
   };
 
   const toggleTaskCompletion = (id: number) => {
@@ -51,26 +59,21 @@ export const TaskManager = () => {
     });
 
     setTasks(newTasks);
+
+    const serializedTasks = JSON.stringify([...newTasks]);
+
+    localStorage.setItem("tasks", serializedTasks);
   };
 
   return (
     <div className="container mx-auto bg-white p-4 rounded shadow">
-      <form onSubmit={handleAddTask} className="mb-4 flex">
-        <input
-          type="text"
-          placeholder="New task..."
-          value={newTask}
-          onChange={(e) => setNewTask(e.target.value)}
-          className="flex-grow border rounded-l py-2 px-3"
-        />
-        <button type="submit" className="bg-blue-500 text-white px-4 rounded-r hover:opacity-90">
-          Add
-        </button>
-      </form>
+      <TaskForm onSubmit={handleAddTask} />
 
       <Filter statuses={statuses} onFilter={setFilter} currentStatus={filter} />
 
       <ul>
+        {filteredTasks.length === 0 && <p className="text-center text-gray-500 py-3">No tasks found</p>}
+
         {filteredTasks.map((task) => (
           <TaskItem key={task.id} task={task} onDelete={handleDeleteTask} onToggle={toggleTaskCompletion} />
         ))}
